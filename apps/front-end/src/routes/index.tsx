@@ -1,8 +1,8 @@
 import { createRootRoute, createRoute, NotFoundRoute, Outlet, Router } from "@tanstack/react-router";
  import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import  LandingPage from '../app/LandingPage'
-import ImageGrid from '../app/components/ImageGrid'
-import SingleImage from '../app/components/SingleImage'
+import SingleMedia from '../app/components/SingleMedia'
+import MediaGrid from "../app/components/mediaGrid";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -19,16 +19,16 @@ const landingPageRoute = createRoute({
   component: LandingPage,
 });
 
-const imageGridRoute = createRoute({
+const mediaGridRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/images",
-  component: ImageGrid,
+  path: "/media",
+  component: MediaGrid,
 });
 
-const singleImageRoute = createRoute({
+const singleMediaRoute = createRoute({
   getParentRoute: () => rootRoute,
-  path: "/images/$imageId",
-  component: SingleImage,
+  path: "/media/$mediaId",
+  component: SingleMedia,
 });
 
 
@@ -40,8 +40,8 @@ const notFoundRoute = new NotFoundRoute({
 
 const routeTree = rootRoute.addChildren([
   landingPageRoute,
-  imageGridRoute,
-  singleImageRoute,
+  mediaGridRoute,
+  singleMediaRoute,
 ]);
 
 export const router = new Router({ routeTree, notFoundRoute });

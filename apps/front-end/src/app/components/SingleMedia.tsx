@@ -3,17 +3,18 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
 import { Field } from '@ark-ui/react/field';
 
-interface ImageDetail {
+interface MediaDetail {
   id: string;
   url: string;
   title: string;
   description?: string;
+  mediaType: string;
   comments: Comment[];
 }
 
 interface Comment {
   id: string;
-  imageId: string;
+  mediaId: string;
   userId: string;
   username: string;
   text: string;
@@ -21,32 +22,32 @@ interface Comment {
 }
 
 interface UpdateDescriptionVariables {
-  imageId: string;
+  mediaId: string;
   description: string;
 }
 
 interface AddCommentVariables {
-  imageId: string;
+  mediaId: string;
   text: string;
 }
 
 const API_BASE_URL = 'http://localhost:8080'; 
 const MOCK_TOKEN = 'mocktoken'; 
 
-const fetchImageDetail = async (imageId: string): Promise<ImageDetail> => {
-  const response = await fetch(`${API_BASE_URL}/images/${imageId}`, {
+const fetchMediaDetail = async (mediaId: string): Promise<MediaDetail> => {
+  const response = await fetch(`${API_BASE_URL}/media/${mediaId}`, {
     headers: { 'Authorization': `Bearer ${MOCK_TOKEN}` },
   });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) throw new Error('Authentication failed. Please login again.');
-    throw new Error('Failed to fetch image details');
+    throw new Error('Failed to fetch media details');
   }
   return response.json();
 };
 
-const updateImageDescription = async (variables: UpdateDescriptionVariables): Promise<ImageDetail> => {
-  const { imageId, description } = variables;
-  const response = await fetch(`${API_BASE_URL}/images/${imageId}/description`, {
+const updateMediaDescription = async (variables: UpdateDescriptionVariables): Promise<MediaDetail> => {
+  const { mediaId, description } = variables;
+  const response = await fetch(`${API_BASE_URL}/media/${mediaId}/description`, {
     method: 'PUT',
     headers: {
       'Authorization': `Bearer ${MOCK_TOKEN}`,
@@ -59,8 +60,8 @@ const updateImageDescription = async (variables: UpdateDescriptionVariables): Pr
 };
 
 const addComment = async (variables: AddCommentVariables): Promise<Comment> => {
-  const { imageId, text } = variables;
-  const response = await fetch(`${API_BASE_URL}/images/${imageId}/comments`, {
+  const { mediaId, text } = variables;
+  const response = await fetch(`${API_BASE_URL}/media/${mediaId}/comments`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${MOCK_TOKEN}`,
@@ -72,9 +73,9 @@ const addComment = async (variables: AddCommentVariables): Promise<Comment> => {
   return response.json();
 };
 
-export default function SingleImage() {
-  const params = useParams({ from: '/images/$imageId' }); 
-  const imageId = params.imageId;
+export default function SingleMedia() {
+  const params = useParams({ from: '/media/$mediaId' }); 
+  const mediaId = params.mediaId;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -82,28 +83,28 @@ export default function SingleImage() {
   const [editedDescription, setEditedDescription] = useState<string | undefined>('');
   const [isEditingDescription, setIsEditingDescription] = useState(false);
 
-  const imageQueryKey = ['image', imageId] as const;
+  const mediaQueryKey = ['media', mediaId] as const;
 
-  const { data: imageData, isLoading, error } = useQuery<
-    ImageDetail,
+  const { data: mediaData, isLoading, error } = useQuery<
+    MediaDetail,
     Error,
-    ImageDetail,
-    typeof imageQueryKey
+    MediaDetail,
+    typeof mediaQueryKey
   >({
-    queryKey: imageQueryKey,
-    queryFn: () => fetchImageDetail(imageId),
-    enabled: !!imageId
+    queryKey: mediaQueryKey,
+    queryFn: () => fetchMediaDetail(mediaId),
+    enabled: !!mediaId
   });
 
   useEffect(() => {
-    if (imageData) {
-      setEditedDescription(imageData.description);
+    if (mediaData) {
+      setEditedDescription(mediaData.description);
     }
-  }, [imageData]);
+  }, [mediaData]);
 
   useEffect(() => {
     if (error) {
-        console.error("Error fetching image:", error.message);
+        console.error("Error fetching media:", error.message);
         if (error.message.toLowerCase().includes('auth')) {
             navigate({ to: '/' });
         }
@@ -111,16 +112,16 @@ export default function SingleImage() {
   }, [error, navigate]);
 
   const descriptionMutation = useMutation<
-    ImageDetail,
+    MediaDetail,
     Error,
     UpdateDescriptionVariables
   >({
-    mutationFn: updateImageDescription,
-    onSuccess: (updatedImage) => {
-      queryClient.setQueryData<ImageDetail>(imageQueryKey, (oldData) => {
+    mutationFn: updateMediaDescription,
+    onSuccess: (updatedMedia) => {
+      queryClient.setQueryData<MediaDetail>(mediaQueryKey, (oldData) => {
         if (!oldData) return oldData;
         return {
-          ...updatedImage,
+          ...updatedMedia,
           comments: oldData.comments 
         };
       });
@@ -135,7 +136,7 @@ export default function SingleImage() {
   >({
     mutationFn: addComment,
     onSuccess: (newCommentData) => {
-      queryClient.setQueryData<ImageDetail>(imageQueryKey, (oldData) => {
+      queryClient.setQueryData<MediaDetail>(mediaQueryKey, (oldData) => {
         if (!oldData) return oldData;
         return {
           ...oldData,
@@ -147,31 +148,50 @@ export default function SingleImage() {
   });
 
   const handleDescriptionSave = () => {
-    if (imageId && editedDescription !== undefined) {
-      descriptionMutation.mutate({ imageId, description: editedDescription });
+    if (mediaId && editedDescription !== undefined) {
+      descriptionMutation.mutate({ mediaId, description: editedDescription });
     }
   };
 
   const handleAddComment = (e: React.FormEvent) => {
     e.preventDefault();
-    if (imageId && newComment.trim()) {
-      commentMutation.mutate({ imageId, text: newComment.trim() });
+    if (mediaId && newComment.trim()) {
+      commentMutation.mutate({ mediaId, text: newComment.trim() });
     }
   };
 
-  if (isLoading) return <div className="single-image-loading">Loading image...</div>;
-  if (error) return <div className="single-image-error">Error: {error.message}</div>;
-  if (!imageData) return <div className="single-image-not-found">Image not found.</div>;
+  if (isLoading) return <div className="single-media-loading">Loading media...</div>;
+  if (error) return <div className="single-media-error">Error: {error.message}</div>;
+  if (!mediaData) return <div className="single-media-not-found">Media not found.</div>;
 
   return (
-    <div className="single-image-container">
-      <button onClick={() => navigate({ to: '/images' })} className="back-to-gallery-button">
+    <div className="single-media-container">
+      <button onClick={() => navigate({ to: '/media' })} className="back-to-gallery-button">
         &larr; Back to Gallery
       </button>
-      <h1 className="single-image-title">{imageData.title}</h1>
+      <h1 className="single-media-title">{mediaData.title}</h1>
       
-      <div className="single-image-media">
-        <img src={imageData.url} alt={imageData.title} className="single-image-display" />
+      <div className="single-media-media">
+        {mediaData.mediaType === 'video' ? (
+          <video
+          src={mediaData.url}
+          className="single-media-display"
+          muted
+          preload="metadata"
+          playsInline
+          onMouseEnter={(e) => e.currentTarget.play()}
+          onMouseLeave={(e) => {
+            e.currentTarget.pause();
+            e.currentTarget.currentTime = 0;
+          }}
+        />
+        ) : (
+          <img
+            src={mediaData.url}
+            alt={mediaData.title}
+            className="single-media-display"
+          />
+        )}
       </div>
 
       <div className="description-section">
@@ -192,7 +212,7 @@ export default function SingleImage() {
               </button>
               <button onClick={() => {
                 setIsEditingDescription(false);
-                setEditedDescription(imageData.description);
+                setEditedDescription(mediaData.description);
               }} className="cancel-button">
                 Cancel
               </button>
@@ -200,7 +220,7 @@ export default function SingleImage() {
           </>
         ) : (
           <>
-            <p className="description-text">{imageData.description || 'No description available.'}</p>
+            <p className="description-text">{mediaData.description || 'No description available.'}</p>
             <button onClick={() => setIsEditingDescription(true)} className="edit-button">
               Edit Description
             </button>
@@ -209,7 +229,7 @@ export default function SingleImage() {
       </div>
 
       <div className="comments-section">
-        <h2 className="section-title">Comments ({imageData.comments.length})</h2>
+        <h2 className="section-title">Comments ({mediaData.comments.length})</h2>
         <form onSubmit={handleAddComment} className="comment-form">
           <Field.Root>
             <Field.Textarea
@@ -227,8 +247,8 @@ export default function SingleImage() {
           </button>
         </form>
         <div className="comments-list">
-          {imageData.comments.length > 0 ? (
-            imageData.comments.map((comment) => (
+          {mediaData.comments.length > 0 ? (
+            mediaData.comments.map((comment) => (
               <div key={comment.id} className="comment-item">
                 <p className="comment-author">
                   <strong>{comment.username}</strong> 

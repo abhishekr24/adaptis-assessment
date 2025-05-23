@@ -10,7 +10,7 @@ export default function LandingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username && password) {
-      navigate({ to: '/images' });
+      navigate({ to: '/media' });
     }
   };
 

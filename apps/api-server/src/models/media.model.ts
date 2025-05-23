@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
-import type { ImageDocument } from '../types/image.types';
+import type { MediaDocument } from '../types/media.types';
 
-const imageSchema = new mongoose.Schema<ImageDocument>({
+const mediaSchema = new mongoose.Schema<MediaDocument>({
   url: {
     type: String,
     required: true
@@ -21,17 +21,22 @@ const imageSchema = new mongoose.Schema<ImageDocument>({
   updatedAt: {
     type: Date,
     default: Date.now
+  },
+  mediaType: {
+    type: String,
+    enum: ['image', 'video'],
+    default: 'image'
   }
 });
 
 // Update the updatedAt timestamp before saving
-imageSchema.pre('save', function(next) {
+mediaSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();
 });
 
-// Transform the document to match Image interface
-imageSchema.set('toJSON', {
+// Transform the document to match media interface
+mediaSchema.set('toJSON', {
   virtuals: true,
   versionKey: false,
   transform: function(_doc, ret) {
@@ -42,4 +47,4 @@ imageSchema.set('toJSON', {
   }
 });
 
-export const ImageModel = mongoose.model<ImageDocument>('Image', imageSchema); 
+export const MediaModel = mongoose.model<MediaDocument>('Media', mediaSchema); 

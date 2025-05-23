@@ -2,9 +2,9 @@ import express, { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { ImageModel } from './models/image.model';
+import { MediaModel } from './models/media.model';
 import { CommentModel } from './models/comment.model';
-import type { Image } from './types/image.types';
+import type { Media } from './types/media.types';
 import type { Comment } from './types/comment.types';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 
@@ -12,7 +12,7 @@ dotenv.config();
 
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 8080;
-const db = process.env.MONGO_URI || 'mongodb://localhost:27017/imagegallery';
+const db = process.env.MONGO_URI || 'mongodb://localhost:27017/mediagallery';
 console.log(`connecting to ${db}`);
 
 export const app = express();
@@ -50,17 +50,23 @@ MongoMemoryServer.create().then((mongoServer) => {
 
 // Initialize database with mock data if empty
 async function initializeDatabase() {
-  const count = await ImageModel.countDocuments();
+  const count = await MediaModel.countDocuments();
   if (count === 0) {
-    const mockImages = Array.from({ length: 100 }, (_, i) => ({
-      url: `https://picsum.photos/seed/img${i + 1}/600/400`,
-      title: `Image ${i + 1}`,
-      description: `This is a detailed description for Image ${i + 1}. It can be quite long and informative, discussing the nuances and context of the visual content presented. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`
-    }));
+    const mockMediaItems = Array.from({ length: 100 }, (_, i) => {
+      const isVideo = Math.random() < 0.25;
+      return ({
+      url: isVideo
+          ? 'https://sample-videos.com/video321/mp4/480/big_buck_bunny_480p_1mb.mp4'
+          : `https://picsum.photos/seed/media${i}/600/400`,
+      title: `${isVideo ? 'Video' : 'Image'} ${i + 1}`,
+      description: `This is a detailed description for Media ${i + 1}. It can be quite long and informative, discussing the nuances and context of the visual content presented. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`,
+      mediaType: isVideo ? 'video' : 'image'
+    })
+    });
 
     try {
-      await ImageModel.insertMany(mockImages);
-      console.log('Database initialized with mock images');
+      await MediaModel.insertMany(mockMediaItems);
+      console.log('Database initialized with mock media items');
     } catch (error) {
       console.error('Error initializing database:', error);
     }
@@ -70,26 +76,26 @@ async function initializeDatabase() {
 initializeDatabase();
 
 app.get('/', (req: Request, res: Response): Response => {
-  return res.send({ 'message': 'Hello API. Use /images to get images.' });
+  return res.send({ 'message': 'Hello API. Use /media to get media.' });
 });
 
 interface PaginatedResponse {
   page: number;
   limit: number;
   totalPages: number;
-  totalImages: number;
-  data: Image[];
+  totalMedia: number;
+  data: Media[];
 }
 
-// Images endpoint with pagination
-app.get('/images', authenticateToken, async (req: AuthenticatedRequest, res: Response<PaginatedResponse>): Promise<Response> => {
+// Media endpoint with pagination
+app.get('/media', authenticateToken, async (req: AuthenticatedRequest, res: Response<PaginatedResponse>): Promise<Response> => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = parseInt(req.query.limit as string) || 25;
     const skip = (page - 1) * limit;
 
-    const [images, total] = await Promise.all([
-      ImageModel.find()
+    const [media, total] = await Promise.all([
+      MediaModel.find()
         .skip(skip)
         .limit(limit)
         .lean()
@@ -100,46 +106,47 @@ app.get('/images', authenticateToken, async (req: AuthenticatedRequest, res: Res
             description: doc.description,
             createdAt: doc.createdAt,
             updatedAt: doc.updatedAt,
-            id: doc._id.toString()
+            id: doc._id.toString(),
+            mediaType: doc.mediaType,
           }))
         ),
-      ImageModel.countDocuments()
+      MediaModel.countDocuments()
     ]);
 
     return res.json({
       page,
       limit,
       totalPages: Math.ceil(total / limit),
-      totalImages: total,
-      data: images
+      totalMedia: total,
+      data: media
     });
   } catch (error) {
-    console.error('Error fetching images:', error);
-    return res.status(500).json({ message: 'Error fetching images' } as any);
+    console.error('Error fetching media:', error);
+    return res.status(500).json({ message: 'Error fetching media' } as any);
   }
 });
 
-interface ImageWithComments extends Image {
+interface MediaWithComments extends Media {
   comments: Comment[];
 }
 
-// GET single image with comments
-app.get('/images/:imageId', authenticateToken, async (req: AuthenticatedRequest, res: Response<ImageWithComments>): Promise<Response> => {
+// GET single media with comments
+app.get('/media/:mediaId', authenticateToken, async (req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> => {
   try {
 
-    let image;
-    typeof req.params.imageId === 'string' ? image = await ImageModel.findById(req.params.imageId) : image = await ImageModel.findById(`${req.params.imageId}`);
-    if (!image) {
-      return res.status(404).json({ message: 'Image not found' } as any);
+    let media;
+    typeof req.params.mediaId === 'string' ? media = await MediaModel.findById(req.params.mediaId) : media = await MediaModel.findById(`${req.params.mediaId}`);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' } as any);
     }
 
-    const comments = await CommentModel.find({ imageId: image._id })
+    const comments = await CommentModel.find({ mediaId: media._id })
       .sort({ timestamp: -1 })
       .lean()
       .transform((docs) =>
         docs.map(doc => ({
           id: doc._id.toString(),
-          imageId: doc.imageId.toString(),
+          mediaId: doc.mediaId.toString(),
           userId: doc.userId,
           username: doc.username,
           text: doc.text,
@@ -147,24 +154,25 @@ app.get('/images/:imageId', authenticateToken, async (req: AuthenticatedRequest,
         }))
       );
 
-    const transformedImage: Image = {
-      id: image._id.toString(),
-      url: image.url,
-      title: image.title,
-      description: image.description,
-      createdAt: image.createdAt,
-      updatedAt: image.updatedAt
+    const transformedMedia: Media = {
+      id: media._id.toString(),
+      url: media.url,
+      title: media.title,
+      description: media.description,
+      createdAt: media.createdAt,
+      updatedAt: media.updatedAt,
+      mediaType: media.mediaType
     };
 
-    return res.json({ ...transformedImage, comments });
+    return res.json({ ...transformedMedia, comments });
   } catch (error) {
-    console.error('Error fetching image details:', error);
-    return res.status(500).json({ message: 'Error fetching image details' } as any);
+    console.error('Error fetching media details:', error);
+    return res.status(500).json({ message: 'Error fetching media details' } as any);
   }
 });
 
 // POST new comment
-app.post('/images/:imageId/comments', authenticateToken, async (req: AuthenticatedRequest, res: Response<Comment>): Promise<Response> => {
+app.post('/media/:mediaId/comments', authenticateToken, async (req: AuthenticatedRequest, res: Response<Comment>): Promise<Response> => {
   try {
     const { text } = req.body;
     const user = req.user!;
@@ -173,13 +181,13 @@ app.post('/images/:imageId/comments', authenticateToken, async (req: Authenticat
       return res.status(400).json({ message: 'Comment text is required' } as any);
     }
 
-    const image = await ImageModel.findById(req.params.imageId);
-    if (!image) {
-      return res.status(404).json({ message: 'Image not found' } as any);
+    const media = await MediaModel.findById(req.params.mediaId);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' } as any);
     }
 
     const newComment = new CommentModel({
-      imageId: image._id,
+      mediaId: media._id,
       userId: user.id,
       username: user.username,
       text,
@@ -191,7 +199,7 @@ app.post('/images/:imageId/comments', authenticateToken, async (req: Authenticat
     // Transform the comment document safely
     const transformedComment: Comment = {
       id: savedComment._id?.toString() || '',
-      imageId: savedComment.imageId?.toString() || '',
+      mediaId: savedComment.mediaId?.toString() || '',
       userId: savedComment.userId || '',
       username: savedComment.username || '',
       text: savedComment.text || '',
@@ -205,8 +213,8 @@ app.post('/images/:imageId/comments', authenticateToken, async (req: Authenticat
   }
 });
 
-// PUT update image description
-app.put('/images/:imageId/description', authenticateToken, async (req: AuthenticatedRequest, res: Response<ImageWithComments>): Promise<Response> => {
+// PUT update media description
+app.put('/media/:mediaId/description', authenticateToken, async (req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> => {
   try {
     const { description } = req.body;
 
@@ -214,26 +222,26 @@ app.put('/images/:imageId/description', authenticateToken, async (req: Authentic
       return res.status(400).json({ message: 'Description must be a string' } as any);
     }
 
-    let image;
-    typeof req.params.imageId === 'string' ? 
-      image = await ImageModel.findById(req.params.imageId) : 
-      image = await ImageModel.findById(`${req.params.imageId}`);
+    let media;
+    typeof req.params.mediaId === 'string' ? 
+      media = await MediaModel.findById(req.params.mediaId) : 
+      media = await MediaModel.findById(`${req.params.mediaId}`);
     
-    if (!image) {
-      return res.status(404).json({ message: 'Image not found' } as any);
+    if (!media) {
+      return res.status(404).json({ message: 'Media not found' } as any);
     }
 
-    image.description = description;
-    await image.save();
-    const savedImage = image.toJSON();
+    media.description = description;
+    await media.save();
+    const savedMedia = media.toJSON();
 
-    const comments = await CommentModel.find({ imageId: image._id })
+    const comments = await CommentModel.find({ mediaId: media._id })
       .sort({ timestamp: -1 })
       .lean()
       .transform((docs) =>
         docs.map(doc => ({
           id: doc._id?.toString() || '',
-          imageId: doc.imageId?.toString() || '',
+          mediaId: doc.mediaId?.toString() || '',
           userId: doc.userId || '',
           username: doc.username || '',
           text: doc.text || '',
@@ -241,17 +249,18 @@ app.put('/images/:imageId/description', authenticateToken, async (req: Authentic
         }))
       );
 
-    // Transform the image document safely
-    const transformedImage: Image = {
-      id: savedImage._id?.toString() || '',
-      url: savedImage.url || '',
-      title: savedImage.title || '',
-      description: savedImage.description || '',
-      createdAt: savedImage.createdAt || new Date(),
-      updatedAt: savedImage.updatedAt || new Date()
+    // Transform the media document safely
+    const transformedMedia: Media = {
+      id: savedMedia._id?.toString() || '',
+      url: savedMedia.url || '',
+      title: savedMedia.title || '',
+      description: savedMedia.description || '',
+      createdAt: savedMedia.createdAt || new Date(),
+      updatedAt: savedMedia.updatedAt || new Date(),
+      mediaType: savedMedia.mediaType || 'image'
     };
 
-    return res.json({ ...transformedImage, comments });
+    return res.json({ ...transformedMedia, comments });
   } catch (error) {
     console.error('Error updating description:', error);
     return res.status(500).json({ message: 'Error updating description' } as any);

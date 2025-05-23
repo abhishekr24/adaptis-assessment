@@ -1,14 +1,15 @@
 import { Types } from 'mongoose';
 
-export interface Image {
+export interface Media {
   id: string;
   url: string;
   title: string;
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+  mediaType: 'image' | 'video';
 }
 
-export interface ImageDocument extends Omit<Image, 'id'> {
+export interface MediaDocument extends Omit<Media, 'id'> {
   _id: Types.ObjectId;
 } 

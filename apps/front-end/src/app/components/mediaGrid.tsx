@@ -2,25 +2,26 @@ import { Link, Outlet, useNavigate } from '@tanstack/react-router';
 import { useQuery, QueryKey } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
-interface Image {
+interface Media {
   id: string;
   url: string;
   title: string;
+  mediaType: string;
 }
 
 interface ApiResponse {
   page: number;
   limit: number;
   totalPages: number;
-  totalImages: number;
-  data: Image[];
+  totalMedia: number;
+  data: Media[];
 }
 
-const fetchImages = async ({ queryKey }: { queryKey: QueryKey }): Promise<ApiResponse> => {
+const fetchMedia = async ({ queryKey }: { queryKey: QueryKey }): Promise<ApiResponse> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_key, page, limit] = queryKey as [string, number, number]; 
   const token = 'mocktoken'; 
-  const response = await fetch(`http://localhost:8080/images?page=${page}&limit=${limit}`, {
+  const response = await fetch(`http://localhost:8080/media?page=${page}&limit=${limit}`, {
     headers: {
       'Authorization': `Bearer ${token}`,
     },
@@ -35,14 +36,14 @@ const fetchImages = async ({ queryKey }: { queryKey: QueryKey }): Promise<ApiRes
   return response.json();
 };
 
-export default function ImageGrid() {
+export default function MediaGrid() {
   const [currentPage, setCurrentPage] = useState(1);
-  const imagesPerPage = 25; 
+  const mediaPerPage = 25; 
   const navigate = useNavigate();
 
   const { data, isLoading, error, isFetching } = useQuery<ApiResponse, Error, ApiResponse, QueryKey>({
-    queryKey: ['images', currentPage, imagesPerPage],
-    queryFn: fetchImages,
+    queryKey: ['media', currentPage, mediaPerPage],
+    queryFn: fetchMedia,
   });
 
   useEffect(() => {
@@ -51,8 +52,8 @@ export default function ImageGrid() {
     }
   }, [error, navigate]);
 
-  if (isLoading && !data) return <div className="image-grid-loading">Loading images...</div>; 
-  if (error) return <div className="image-grid-error">Error fetching images: {error.message}</div>;
+  if (isLoading && !data) return <div className="media-grid-loading">Loading media...</div>; 
+  if (error) return <div className="media-grid-error">Error fetching media: {error.message}</div>;
 
   const handleNextPage = () => {
     if (data && currentPage < data.totalPages) {
@@ -66,31 +67,52 @@ export default function ImageGrid() {
     }
   };
 
-  const imageList = data?.data || [];
+  const mediaList = data?.data || [];
   const totalPages = data?.totalPages || 1;
 
-  return (
-    <div className="image-grid-container">
-      <h1 className="image-grid-title">Image Gallery</h1>
+  console.log('mediaList', mediaList);
 
-      <div className="image-grid">
-        {imageList.map((image: Image) => (
-          <Link 
-            to="/images/$imageId" 
-            params={{ imageId: image.id }} 
-            key={image.id} 
-            className="image-cell"
-          >
-            <div className="image-thumbnail-container">
-              <img src={image.url} alt={image.title} className="image-thumbnail" />
-            </div>
-            <p className="image-cell-title">{image.title}</p>
-          </Link>
-        ))}
+  return (
+    <div className="media-grid-container">
+      <h1 className="media-grid-title">Media Gallery</h1>
+
+      <div className="media-grid">
+      {mediaList.map((media: Media) => (
+  <Link 
+    to="/media/$mediaId" 
+    params={{ mediaId: media.id }} 
+    key={media.id} 
+    className="media-cell"
+  >
+    <div className="media-thumbnail-container">
+      {media.mediaType === 'video' ? (
+        <video
+        src={media.url}
+        className="media-thumbnail"
+        muted
+        preload="metadata"
+        playsInline
+        onMouseEnter={(e) => e.currentTarget.play()}
+        onMouseLeave={(e) => {
+          e.currentTarget.pause();
+          e.currentTarget.currentTime = 0;
+        }}
+      />
+      ) : (
+        <img
+          src={media.url}
+          alt={media.title}
+          className="media-thumbnail"
+        />
+      )}
+    </div>
+    <p className="media-cell-title">{media.title}</p>
+  </Link>
+))}
       </div>
 
-      {imageList.length === 0 && !isFetching && (
-        <p className="image-grid-empty">No images found for this page.</p>
+      {mediaList.length === 0 && !isFetching && (
+        <p className="media-grid-empty">No media found for this page.</p>
       )}
 
       <div className="pagination-controls">
