@@ -4,6 +4,7 @@ import { Field } from '@ark-ui/react/field';
 import { MediaCard } from '../components/mediaCard';
 import { useAddComment, useMediaDetail, useUpdateDescription, useUpdateTags } from '../services/mediaHook';
 import { CommentCard } from '../components/commentCard';
+import { isAuthenticated } from '../services/loginServices';
 
 export default function SingleMedia() {
   const params = useParams({ from: '/media/$mediaId' });
@@ -29,7 +30,7 @@ export default function SingleMedia() {
       const newTags = tagsInput
         .split(',')
         .map(tag => tag.trim())
-        .filter(tag => tag && !mediaData?.tags.includes(tag)); // avoid duplicates
+        .filter(tag => tag && !mediaData?.tags.includes(tag));
 
       const updatedTags = [...mediaData?.tags, ...newTags];
       updateTags({ mediaId, tags: updatedTags }, {
@@ -98,7 +99,7 @@ export default function SingleMedia() {
             placeholder="Comma-separated tags"
           />
           <button onClick={handleTagUpdate} disabled={isEditingTags}>
-            {isEditingTags ? 'Updating...' : 'Update Tags'}
+            {tagsMutationIsPending ? 'Updating...' : 'Update Tags'}
           </button>
         </div>
         <div className="tags-display">

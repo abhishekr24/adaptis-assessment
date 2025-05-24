@@ -33,5 +33,10 @@ export async function registerUser(username: string, password: string): Promise<
   }
 
   export const isAuthenticated = () => {
-    return !!localStorage.getItem('token');
+    if (typeof window === 'undefined') return false;
+    try {
+      return !!localStorage.getItem('token');
+    } catch {
+      return false;
+    }
   };

@@ -4,6 +4,7 @@ import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
 import { useAuth } from '../context/auth.context';
+import { isAuthenticated } from '../services/loginServices';
 
 export default function MediaGrid() {
   const { page = 1, tag = "" } = useSearch({ from: '/media' });
@@ -83,7 +84,6 @@ export default function MediaGrid() {
 
   const mediaList = data?.data || [];
   const totalPages = data?.totalPages || 1;
-
 
   return (
     <div className="media-grid-container">

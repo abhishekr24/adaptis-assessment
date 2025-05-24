@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app } from './main';
 import { MediaModel } from './models/media.model';
 import { CommentModel } from './models/comment.model';
+import { UserModel } from './models/user.model';
+import { JWT_SECRET } from './controller/auth.controller'; // or wherever your secret is defined
 
 describe('API Routes', () => {
   let mongoServer: MongoMemoryServer;
-  const mockToken = 'mocktoken';
+  let mockToken = 'mocktoken';
 
   beforeAll(async () => {
     // Create an in-memory MongoDB instance
@@ -26,6 +29,7 @@ describe('API Routes', () => {
     // Clear the database before each test
     await MediaModel.deleteMany({});
     await CommentModel.deleteMany({});
+    await UserModel.deleteMany({});
   });
 
   describe('GET /', () => {
@@ -65,6 +69,17 @@ describe('API Routes', () => {
           description: 'Description 2'
         }
       ]);
+
+      // Create a test user
+      const testUser = await UserModel.create({
+        username: 'testuser',
+        passwordHash: 'testhash' // hash not needed if JWT is mocked directly
+      });
+
+      // Generate a JWT for this user
+      mockToken = jwt.sign({ id: testUser._id, username: testUser.username }, JWT_SECRET, {
+        expiresIn: '1h'
+      });
     });
 
     it('should return paginated media', async () => {

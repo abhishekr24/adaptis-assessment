@@ -5,11 +5,16 @@ import SingleMedia from '../app/features/SingleMedia'
 import MediaGrid from "../app/features/mediaGrid";
 import { isAuthenticated } from "../app/services/loginServices";
 
+function RouterDevtoolsWrapper() {
+  if (typeof window === 'undefined') return null;
+  return import.meta.env.DEV ? <TanStackRouterDevtools /> : null;
+}
+
 const rootRoute = createRootRoute({
   component: () => (
     <>
       <Outlet />
-      <TanStackRouterDevtools />
+      <RouterDevtoolsWrapper />
     </>
   ),
 });

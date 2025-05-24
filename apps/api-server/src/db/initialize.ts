@@ -1,7 +1,5 @@
 import { MediaModel } from "../models/media.model";
 
-// const PEXELS_API_KEY = "5lABLcCftI4TbMY4KIVgG18ZFZfz6Bue26dajbG7hfdWYTevJ26Ll3Ml"
-
 async function fetchPexelsVideos(pexelsAPIKey: string): Promise<string[]> {
   const response = await fetch(`https://api.pexels.com/videos/search?query=nature&per_page=100`, {
     headers: {
