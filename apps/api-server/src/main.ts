@@ -6,6 +6,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import mediaRoutes from './routes/media.routes';
 import { authenticateToken } from './middleware/auth.middleware';
 import { initializeDatabase } from './db/initialize';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ MongoMemoryServer.create().then((mongoServer) => {
 initializeDatabase();
 
 app.get('/', (_, res) => res.send({ message: 'Hello API. Use /media to get media.' }));
+app.use('/auth', authRoutes);
 app.use('/media', authenticateToken, mediaRoutes)
 
 app.listen(port, host, () => {

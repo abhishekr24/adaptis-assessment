@@ -1,16 +1,31 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Field } from '@ark-ui/react/field';
+import { useAuth } from './context/auth.context';
 
 export default function LandingPage() {
+  const [isRegistering, setIsRegistering] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [errorMessage, setErrorMessage] = useState<String>('')
   const navigate = useNavigate();
+  const { login, register } = useAuth();
+
+  const handleIsRegistration = () => {
+    setUsername('');
+    setPassword('');
+    setIsRegistering(!isRegistering)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username && password) {
-      navigate({ to: '/media' });
+      const success = isRegistering
+        ? await register(username, password)
+        : await login(username, password);
+
+      if (success) navigate({ to: '/media', search: { page: 1 } });
+      setErrorMessage('Authentication failed');
     }
   };
 
@@ -39,9 +54,19 @@ export default function LandingPage() {
           </Field.Root>
 
           <button type="submit" className="login-button">
-            Login
+            {isRegistering ? 'Register' : 'Login'}
           </button>
         </form>
+        <br />
+        <button
+          className="toggle-auth-mode-button"
+          onClick={handleIsRegistration}
+        >
+          {isRegistering ? 'Already have an account? Login' : 'New user? Register'}
+        </button>
+        {errorMessage && (
+          <p style={{ color: 'red' }}>{errorMessage}</p>
+        )}
       </div>
     </main>
   );

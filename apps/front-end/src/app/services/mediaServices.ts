@@ -1,14 +1,20 @@
 import { QueryKey } from "@tanstack/react-query";
-import { ApiResponse, MediaDetail, API_BASE_URL, MOCK_TOKEN, UpdateDescriptionVariables, AddCommentVariables, Comment } from "./types";
+import { ApiResponse, MediaDetail, API_BASE_URL, UpdateDescriptionVariables, AddCommentVariables, Comment } from "./types";
+
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token');
+  return {
+    'Authorization': `Bearer ${token ?? ''}`,
+    'Content-Type': 'application/json',
+  };
+};
 
 export const fetchMedia = async ({ queryKey }: { queryKey: QueryKey }): Promise<ApiResponse> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_key, page, limit] = queryKey as [string, number, number]; 
-  const token = 'mocktoken'; 
+  // const token = 'mocktoken'; 
   const response = await fetch(`http://localhost:8080/media?page=${page}&limit=${limit}`, {
-    headers: {
-      'Authorization': `Bearer ${token}`,
-    },
+    headers: getAuthHeaders(),
   });
 
   if (!response.ok) {
@@ -22,7 +28,7 @@ export const fetchMedia = async ({ queryKey }: { queryKey: QueryKey }): Promise<
   
 export const fetchMediaDetail = async (mediaId: string): Promise<MediaDetail> => {
   const response = await fetch(`${API_BASE_URL}/media/${mediaId}`, {
-    headers: { 'Authorization': `Bearer ${MOCK_TOKEN}` },
+    headers: getAuthHeaders(),
   });
   if (!response.ok) {
     if (response.status === 401 || response.status === 403) throw new Error('Authentication failed. Please login again.');
@@ -35,10 +41,7 @@ export const updateMediaDescription = async (variables: UpdateDescriptionVariabl
   const { mediaId, description } = variables;
   const response = await fetch(`${API_BASE_URL}/media/${mediaId}/description`, {
     method: 'PUT',
-    headers: {
-      'Authorization': `Bearer ${MOCK_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ description }),
   });
   if (!response.ok) throw new Error('Failed to update description');
@@ -49,10 +52,7 @@ export const addComment = async (variables: AddCommentVariables): Promise<Commen
   const { mediaId, text } = variables;
   const response = await fetch(`${API_BASE_URL}/media/${mediaId}/comments`, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${MOCK_TOKEN}`,
-      'Content-Type': 'application/json',
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify({ text }),
   });
   if (!response.ok) throw new Error('Failed to add comment');

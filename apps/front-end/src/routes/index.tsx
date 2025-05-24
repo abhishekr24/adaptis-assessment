@@ -1,8 +1,9 @@
-import { createRootRoute, createRoute, NotFoundRoute, Outlet, Router } from "@tanstack/react-router";
+import { createRootRoute, createRoute, NotFoundRoute, Outlet, redirect, Router } from "@tanstack/react-router";
  import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import  LandingPage from '../app/LandingPage'
 import SingleMedia from '../app/features/SingleMedia'
 import MediaGrid from "../app/features/mediaGrid";
+import { isAuthenticated } from "../app/services/loginServices";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -27,12 +28,22 @@ const mediaGridRoute = createRoute({
     const page = Number(search.page ?? 1)
     return { page }
   },
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 const singleMediaRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/media/$mediaId",
   component: SingleMedia,
+  beforeLoad: () => {
+    if (!isAuthenticated()) {
+      throw redirect({ to: '/' });
+    }
+  },
 });
 
 

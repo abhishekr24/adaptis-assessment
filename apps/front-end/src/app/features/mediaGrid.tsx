@@ -3,6 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
+import { useAuth } from '../context/auth.context';
 
 export default function MediaGrid() {
   // const [currentPage, setCurrentPage] = useState(1);
@@ -11,6 +12,12 @@ export default function MediaGrid() {
   const { location } = useRouterState();
   const fromMediaId = location.state?.fromMediaId;
   const mediaRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const { logout } = useAuth();
+  
+  const onHandleLogout = () => {
+    logout();
+    navigate({ to: '/' });
+  }
 
   useEffect(() => {
     if (fromMediaId && mediaRefs.current[fromMediaId]) {
@@ -57,6 +64,11 @@ export default function MediaGrid() {
 
   return (
     <div className="media-grid-container">
+      <button
+        style={{ display: "flex", marginLeft: "auto" }}
+        onClick={onHandleLogout}
+      >Logout
+      </button>
       <h1 className="media-grid-title">Media Gallery</h1>
 
       <div className="media-grid">
