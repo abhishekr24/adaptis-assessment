@@ -20,19 +20,19 @@ export default function LandingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (username && password) {
-      const success = isRegistering
+      const result = isRegistering
         ? await register(username, password)
         : await login(username, password);
 
-      if (success) navigate({ to: '/media', search: { page: 1 } });
-      setErrorMessage('Authentication failed');
+      if (result.success) navigate({ to: '/media', search: { page: 1 } });
+      setErrorMessage(result.error || 'Invalid Credential');
     }
   };
 
   return (
     <main className="landing-page-main">
       <div className="login-container">
-        <h1 className="login-title">Login</h1>
+        <h1 className="login-title">{isRegistering ? "Register" : "Login"}</h1>
         <form onSubmit={handleSubmit} className="login-form">
           <Field.Root className="form-field">
             <Field.Label>Username</Field.Label>

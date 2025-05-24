@@ -8,7 +8,8 @@ export async function loginUser(username: string, password: string) {
       });
     
       if (!response.ok) {
-        throw new Error('Invalid credential');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Invalid credentials');
       }
 
       const data = await response.json()

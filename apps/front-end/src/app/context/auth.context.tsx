@@ -4,8 +4,8 @@ import { loginUser, registerUser } from '../services/loginServices';
 type AuthContextType = {
     user: string | null;
     token: string | null;
-    login: (username: string, password: string) => Promise<boolean>;
-    register: (username: string, password: string) => Promise<boolean>;
+    login: (username: string, password: string) => Promise<{ success: boolean, error?: string }>;
+    register: (username: string, password: string) => Promise<{ success: boolean, error?: string }>;
     logout: () => void;
 };
 
@@ -16,29 +16,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<string | null>(null);
     const [token, setToken] = useState<string | null>(null);
 
-    const login = async (username: string, password: string): Promise<boolean> => {
+    const login = async (username: string, password: string): Promise<{ success: boolean, error?: string }> => {
         try {
             const jwt = await loginUser(username, password);
             setUser(username);
             setToken(jwt);
             localStorage.setItem('token', jwt);
-            return true;
-          } catch (error) {
+            return { success: true };
+          } catch (error: any) {
             console.error('Login failed:', error);
-            return false;
+            return { success: false, error: error.message };
           }
     };
 
-    const register = async (username: string, password: string): Promise<boolean> => {
+    const register = async (username: string, password: string): Promise<{ success: boolean, error?: string }> => {
         try {
             const jwt = await registerUser(username, password);
             setUser(username);
             setToken(jwt);
             localStorage.setItem('token', jwt);
-            return true;
-          } catch (error) {
+            return { success: true };
+          } catch (error: any) {
             console.error('Registration failed:', error);
-            return false;
+            return { success: false, error: error.message };
           }
     };
 

@@ -12,7 +12,7 @@ export async function register(req: Request, res: Response) {
     }
     const existingUser = await UserModel.findOne({ username })
     if (existingUser) {
-        return res.status(400).json({ message: "User already exists "})
+        return res.status(400).json({ message: "User already exists"})
     }
 
     const passwordHash = await bcrypt.hash(password, 10)
@@ -28,12 +28,12 @@ export async function login(req: Request, res: Response) {
     }
     const existingUser = await UserModel.findOne({ username })
     if (!existingUser) {
-        return res.status(401).json({ message: "User does not exist "})
+        return res.status(401).json({ message: "User does not exist"})
     }
     const isPasswordValid = await bcrypt.compare(password, existingUser.passwordHash);
 
     if (!isPasswordValid) {
-        return res.status(401).json({ message: "Incorrect Password"})
+        return res.status(401).json({ message: "Invalid Credentials. Please try again"})
     }
     const token = jwt.sign({ id: existingUser._id, username: username}, JWT_SECRET, { expiresIn: '2h'})
     return res.json({ token, username: username });
