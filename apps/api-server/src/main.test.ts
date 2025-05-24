@@ -1,14 +1,17 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import mongoose from 'mongoose';
+import jwt from 'jsonwebtoken';
 import { MongoMemoryServer } from 'mongodb-memory-server';
 import { app } from './main';
-import { ImageModel } from './models/image.model';
+import { MediaModel } from './models/media.model';
 import { CommentModel } from './models/comment.model';
+import { UserModel } from './models/user.model';
+import { JWT_SECRET } from './controller/auth.controller'; // or wherever your secret is defined
 
 describe('API Routes', () => {
   let mongoServer: MongoMemoryServer;
-  const mockToken = 'mocktoken';
+  let mockToken = 'mocktoken';
 
   beforeAll(async () => {
     // Create an in-memory MongoDB instance
@@ -24,52 +27,64 @@ describe('API Routes', () => {
 
   beforeEach(async () => {
     // Clear the database before each test
-    await ImageModel.deleteMany({});
+    await MediaModel.deleteMany({});
     await CommentModel.deleteMany({});
+    await UserModel.deleteMany({});
   });
 
   describe('GET /', () => {
     it('should return welcome message', async () => {
       const response = await request(app).get('/');
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ message: 'Hello API. Use /images to get images.' });
+      expect(response.body).toEqual({ message: 'Hello API. Use /media to get media.' });
     });
   });
 
   describe('Authentication', () => {
     it('should reject requests without token', async () => {
-      const response = await request(app).get('/images');
+      const response = await request(app).get('/media');
       expect(response.status).toBe(401);
     });
 
     it('should reject requests with invalid token', async () => {
       const response = await request(app)
-        .get('/images')
+        .get('/media')
         .set('Authorization', 'Bearer invalidtoken');
       expect(response.status).toBe(403);
     });
   });
 
-  describe('GET /images', () => {
+  describe('GET /media', () => {
     beforeEach(async () => {
-      // Add some test images
-      await ImageModel.create([
+      // Add some test media
+      await MediaModel.create([
         {
           url: 'https://test1.com/image.jpg',
-          title: 'Test Image 1',
+          title: 'Test Media 1',
           description: 'Description 1'
         },
         {
           url: 'https://test2.com/image.jpg',
-          title: 'Test Image 2',
+          title: 'Test Media 2',
           description: 'Description 2'
         }
       ]);
+
+      // Create a test user
+      const testUser = await UserModel.create({
+        username: 'testuser',
+        passwordHash: 'testhash' // hash not needed if JWT is mocked directly
+      });
+
+      // Generate a JWT for this user
+      mockToken = jwt.sign({ id: testUser._id, username: testUser.username }, JWT_SECRET, {
+        expiresIn: '1h'
+      });
     });
 
-    it('should return paginated images', async () => {
+    it('should return paginated media', async () => {
       const response = await request(app)
-        .get('/images')
+        .get('/media')
         .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
@@ -82,7 +97,7 @@ describe('API Routes', () => {
 
     it('should handle pagination parameters', async () => {
       const response = await request(app)
-        .get('/images?page=1&limit=1')
+        .get('/media?page=1&limit=1')
         .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
@@ -93,18 +108,18 @@ describe('API Routes', () => {
     });
   });
 
-  describe('GET /images/:imageId', () => {
-    let testImage: any;
+  describe('GET /media/:mediaId', () => {
+    let testMedia: any;
 
     beforeEach(async () => {
-      testImage = await ImageModel.create({
+      testMedia = await MediaModel.create({
         url: 'https://test.com/image.jpg',
-        title: 'Test Image',
+        title: 'Test Media',
         description: 'Test Description'
       });
 
       await CommentModel.create({
-        imageId: testImage._id,
+        mediaId: testMedia._id,
         userId: '123',
         username: 'testuser',
         text: 'Test comment',
@@ -112,42 +127,42 @@ describe('API Routes', () => {
       });
     });
 
-    it('should return image with comments', async () => {
+    it('should return media with comments', async () => {
       const response = await request(app)
-        .get(`/images/${testImage._id}`)
+        .get(`/media/${testMedia._id}`)
         .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('id');
       expect(response.body).toHaveProperty('comments');
       expect(response.body.comments).toHaveLength(1);
-      expect(response.body.title).toBe('Test Image');
+      expect(response.body.title).toBe('Test Media');
     });
 
-    it('should return 404 for non-existent image', async () => {
+    it('should return 404 for non-existent media', async () => {
       const nonExistentId = new mongoose.Types.ObjectId();
       const response = await request(app)
-        .get(`/images/${nonExistentId}`)
+        .get(`/media/${nonExistentId}`)
         .set('Authorization', `Bearer ${mockToken}`);
 
       expect(response.status).toBe(404);
     });
   });
 
-  describe('POST /images/:imageId/comments', () => {
-    let testImage: any;
+  describe('POST /media/:mediaId/comments', () => {
+    let testMedia: any;
 
     beforeEach(async () => {
-      testImage = await ImageModel.create({
+      testMedia = await MediaModel.create({
         url: 'https://test.com/image.jpg',
-        title: 'Test Image',
+        title: 'Test Media',
         description: 'Test Description'
       });
     });
 
     it('should add a new comment', async () => {
       const response = await request(app)
-        .post(`/images/${testImage._id}/comments`)
+        .post(`/media/${testMedia._id}/comments`)
         .set('Authorization', `Bearer ${mockToken}`)
         .send({ text: 'New comment' });
 
@@ -159,7 +174,7 @@ describe('API Routes', () => {
 
     it('should reject empty comments', async () => {
       const response = await request(app)
-        .post(`/images/${testImage._id}/comments`)
+        .post(`/media/${testMedia._id}/comments`)
         .set('Authorization', `Bearer ${mockToken}`)
         .send({ text: '' });
 
@@ -167,21 +182,21 @@ describe('API Routes', () => {
     });
   });
 
-  describe('PUT /images/:imageId/description', () => {
-    let testImage: any;
+  describe('PUT /media/:mediaId/description', () => {
+    let testMedia: any;
 
     beforeEach(async () => {
-      testImage = await ImageModel.create({
+      testMedia = await MediaModel.create({
         url: 'https://test.com/image.jpg',
-        title: 'Test Image',
+        title: 'Test Media',
         description: 'Original description'
       });
     });
 
-    it('should update image description', async () => {
+    it('should update media description', async () => {
       const newDescription = 'Updated description';
       const response = await request(app)
-        .put(`/images/${testImage._id}/description`)
+        .put(`/media/${testMedia._id}/description`)
         .set('Authorization', `Bearer ${mockToken}`)
         .send({ description: newDescription });
 
@@ -191,7 +206,7 @@ describe('API Routes', () => {
 
     it('should reject invalid description', async () => {
       const response = await request(app)
-        .put(`/images/${testImage._id}/description`)
+        .put(`/media/${testMedia._id}/description`)
         .set('Authorization', `Bearer ${mockToken}`)
         .send({ description: null });
 

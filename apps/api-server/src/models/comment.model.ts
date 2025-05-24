@@ -2,9 +2,9 @@ import mongoose from 'mongoose';
 import type { CommentDocument } from '../types/comment.types';
 
 const commentSchema = new mongoose.Schema<CommentDocument>({
-  imageId: {
+  mediaId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Image',
+    ref: 'Media',
     required: true
   },
   userId: {
@@ -25,8 +25,8 @@ const commentSchema = new mongoose.Schema<CommentDocument>({
   }
 });
 
-// Create an index for faster comment lookups by imageId
-commentSchema.index({ imageId: 1 });
+// Create an index for faster comment lookups by mediaId
+commentSchema.index({ mediaId: 1 });
 
 // Transform the document to match Comment interface
 commentSchema.set('toJSON', {
@@ -34,7 +34,7 @@ commentSchema.set('toJSON', {
   versionKey: false,
   transform: function(_doc, ret) {
     ret.id = ret._id.toString();
-    ret.imageId = ret.imageId.toString();
+    ret.mediaId = ret.mediaId.toString();
     delete ret._id;
     delete ret.__v;
     return ret;

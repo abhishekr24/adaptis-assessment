@@ -7,7 +7,7 @@
       "path": "./apps/front-end"
     },
     {
-      "path": "./api-server"
+      "path": "./apps/api-server"
     }
   ]
 }
