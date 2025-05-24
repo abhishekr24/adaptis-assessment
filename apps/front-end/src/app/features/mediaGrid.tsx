@@ -4,7 +4,6 @@ import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
 import { useAuth } from '../context/auth.context';
-import { isAuthenticated } from '../services/loginServices';
 
 export default function MediaGrid() {
   const { page = 1, tag = "" } = useSearch({ from: '/media' });
@@ -16,7 +15,7 @@ export default function MediaGrid() {
   const fromMediaId = location.state?.fromMediaId;
   const mediaRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const { logout } = useAuth();
-  
+
   const onHandleLogout = () => {
     logout();
     navigate({ to: '/' });
@@ -62,7 +61,7 @@ export default function MediaGrid() {
 
   const handleTagSearch = () => {
     const trimmedTag = searchTag.trim();
-    
+
     navigate({
       to: '/media',
       search: {
@@ -88,16 +87,19 @@ export default function MediaGrid() {
   return (
     <div className="media-grid-container">
       <div className='search-logout-wrapper'>
-      <div className="tag-search">
-        <input
-          type="text"
-          placeholder="Search by tag"
-          value={searchTag}
-          onChange={(e) => setSearchTag(e.target.value)}
-        />
-        <button onClick={handleTagSearch}>Search</button>
-        <button onClick={handleTagClear}>Clear</button>
-      </div>
+        <form className="tag-search" onSubmit={(e) => {
+          e.preventDefault();
+          handleTagSearch();
+        }}>
+          <input
+            type="text"
+            placeholder="Search by tag"
+            value={searchTag}
+            onChange={(e) => setSearchTag(e.target.value)}
+          />
+          <button type="submit">Search</button>
+          <button type="button" onClick={handleTagClear}>Clear</button>
+        </form>
         <button
           style={{ display: "flex", marginLeft: "auto" }}
           onClick={onHandleLogout}

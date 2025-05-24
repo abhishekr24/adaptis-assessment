@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { Field } from '@ark-ui/react/field';
-import { useAuth } from './context/auth.context';
+import { useAuth } from '../context/auth.context';
 
 export default function LandingPage() {
   const [isRegistering, setIsRegistering] = useState(false);
@@ -14,6 +14,7 @@ export default function LandingPage() {
   const handleIsRegistration = () => {
     setUsername('');
     setPassword('');
+    setErrorMessage('');
     setIsRegistering(!isRegistering)
   }
 

@@ -4,7 +4,6 @@ import { Field } from '@ark-ui/react/field';
 import { MediaCard } from '../components/mediaCard';
 import { useAddComment, useMediaDetail, useUpdateDescription, useUpdateTags } from '../services/mediaHook';
 import { CommentCard } from '../components/commentCard';
-import { isAuthenticated } from '../services/loginServices';
 
 export default function SingleMedia() {
   const params = useParams({ from: '/media/$mediaId' });
@@ -36,6 +35,7 @@ export default function SingleMedia() {
       updateTags({ mediaId, tags: updatedTags }, {
         onSuccess: () => {
           setIsEditingTags(false);
+          setTagsInput("");
         }
       });
     }
@@ -92,16 +92,22 @@ export default function SingleMedia() {
 
       <div className="tags-section">
         <h3>Tags</h3>
-        <div className="tags-input-wrapper">
+        <form
+          className="tags-input-wrapper"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleTagUpdate();
+          }}
+        >
           <input
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="Comma-separated tags"
           />
-          <button onClick={handleTagUpdate} disabled={isEditingTags}>
+          <button type="submit" disabled={isEditingTags}>
             {tagsMutationIsPending ? 'Updating...' : 'Update Tags'}
           </button>
-        </div>
+        </form>
         <div className="tags-display">
           {mediaData.tags.map((tag) => (
             <span key={tag} className="tag-chip">{tag}</span>

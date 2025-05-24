@@ -1,20 +1,15 @@
 import { createRootRoute, createRoute, NotFoundRoute, Outlet, redirect, Router } from "@tanstack/react-router";
  import { TanStackRouterDevtools } from "@tanstack/router-devtools";
-import  LandingPage from '../app/LandingPage'
+import  LandingPage from '../app/features/LandingPage'
 import SingleMedia from '../app/features/SingleMedia'
 import MediaGrid from "../app/features/mediaGrid";
 import { isAuthenticated } from "../app/services/loginServices";
-
-function RouterDevtoolsWrapper() {
-  if (typeof window === 'undefined') return null;
-  return import.meta.env.DEV ? <TanStackRouterDevtools /> : null;
-}
 
 const rootRoute = createRootRoute({
   component: () => (
     <>
       <Outlet />
-      <RouterDevtoolsWrapper />
+      <TanStackRouterDevtools />
     </>
   ),
 });
