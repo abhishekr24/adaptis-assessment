@@ -1,12 +1,14 @@
 import { Link, Outlet, useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
 import { useAuth } from '../context/auth.context';
 
 export default function MediaGrid() {
-  // const [currentPage, setCurrentPage] = useState(1);
+  const { page = 1, tag = "" } = useSearch({ from: '/media' });
+  const [searchTag, setSearchTag] = useState<string>(tag);
+
   const mediaPerPage = 25;
   const navigate = useNavigate();
   const { location } = useRouterState();
@@ -26,10 +28,9 @@ export default function MediaGrid() {
   }, [fromMediaId]);
 
 
-  const { page } = useSearch({ from: '/media' });
   const currentPage = page ?? 1;
 
-  const { data, isLoading, error, isFetching } = useMediaList(currentPage, mediaPerPage);
+  const { data, isLoading, error, isFetching } = useMediaList(currentPage, mediaPerPage, tag);
 
   useEffect(() => {
     if (error?.message.includes('Authentication failed')) {
@@ -44,7 +45,7 @@ export default function MediaGrid() {
     if (data && currentPage < data.totalPages) {
       navigate({
         to: '/media',
-        search: (prev) => ({ ...prev, page: page + 1 }),
+        search: (prev) => ({ ...prev, page: page + 1, tag: tag }),
       })
     }
   };
@@ -53,9 +54,31 @@ export default function MediaGrid() {
     if (currentPage > 1) {
       navigate({
         to: '/media',
-        search: (prev) => ({ ...prev, page: page - 1 }),
+        search: (prev) => ({ ...prev, page: page - 1, tag: tag }),
       })
     }
+  };
+
+  const handleTagSearch = () => {
+    const trimmedTag = searchTag.trim();
+    
+    navigate({
+      to: '/media',
+      search: {
+        page: 1,
+        ...(trimmedTag ? { tag: trimmedTag } : {}),
+      },
+    });
+  };
+
+  const handleTagClear = () => {
+    setSearchTag('');
+    navigate({
+      to: '/media',
+      search: {
+        page: 1,
+      },
+    });
   };
 
   const mediaList = data?.data || [];
@@ -64,11 +87,23 @@ export default function MediaGrid() {
 
   return (
     <div className="media-grid-container">
-      <button
-        style={{ display: "flex", marginLeft: "auto" }}
-        onClick={onHandleLogout}
-      >Logout
-      </button>
+      <div className='search-logout-wrapper'>
+      <div className="tag-search">
+        <input
+          type="text"
+          placeholder="Search by tag"
+          value={searchTag}
+          onChange={(e) => setSearchTag(e.target.value)}
+        />
+        <button onClick={handleTagSearch}>Search</button>
+        <button onClick={handleTagClear}>Clear</button>
+      </div>
+        <button
+          style={{ display: "flex", marginLeft: "auto" }}
+          onClick={onHandleLogout}
+        >Logout
+        </button>
+      </div>
       <h1 className="media-grid-title">Media Gallery</h1>
 
       <div className="media-grid">

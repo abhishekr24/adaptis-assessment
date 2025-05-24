@@ -25,8 +25,12 @@ const mediaGridRoute = createRoute({
   path: "/media",
   component: MediaGrid,
   validateSearch: (search) => {
-    const page = Number(search.page ?? 1)
-    return { page }
+    const page = Number(search.page ?? 1);
+    const tag = typeof search.tag === 'string' ? search.tag : undefined;
+    return {
+      page,
+      ...(tag ? { tag } : {}),
+    };
   },
   beforeLoad: () => {
     if (!isAuthenticated()) {

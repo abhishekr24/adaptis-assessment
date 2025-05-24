@@ -1,5 +1,5 @@
 import { QueryKey } from "@tanstack/react-query";
-import { ApiResponse, MediaDetail, API_BASE_URL, UpdateDescriptionVariables, AddCommentVariables, Comment } from "./types";
+import { ApiResponse, MediaDetail, API_BASE_URL, UpdateDescriptionVariables, AddCommentVariables, Comment, UpdateTagsVariables } from "./types";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem('token');
@@ -11,9 +11,9 @@ const getAuthHeaders = () => {
 
 export const fetchMedia = async ({ queryKey }: { queryKey: QueryKey }): Promise<ApiResponse> => {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_key, page, limit] = queryKey as [string, number, number]; 
+  const [_key, page, limit, tag] = queryKey as [string, number, number, string]; 
   // const token = 'mocktoken'; 
-  const response = await fetch(`http://localhost:8080/media?page=${page}&limit=${limit}`, {
+  const response = await fetch(`http://localhost:8080/media?page=${page}&limit=${limit}&tag=${tag}`, {
     headers: getAuthHeaders(),
   });
 
@@ -56,5 +56,16 @@ export const addComment = async (variables: AddCommentVariables): Promise<Commen
     body: JSON.stringify({ text }),
   });
   if (!response.ok) throw new Error('Failed to add comment');
+  return response.json();
+};
+
+export const updateMediaTags = async (variables: UpdateTagsVariables): Promise<MediaDetail> => {
+  const { mediaId, tags } = variables;
+  const response = await fetch(`${API_BASE_URL}/media/${mediaId}/tags`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify({ tags }),
+  });
+  if (!response.ok) throw new Error('Failed to update tags');
   return response.json();
 };

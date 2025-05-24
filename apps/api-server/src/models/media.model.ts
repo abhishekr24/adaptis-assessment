@@ -26,7 +26,11 @@ const mediaSchema = new mongoose.Schema<MediaDocument>({
     type: String,
     enum: ['image', 'video'],
     default: 'image'
-  }
+  },
+  tags: {
+    type: [String],
+    default: [],
+  },
 });
 
 // Update the updatedAt timestamp before saving

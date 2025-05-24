@@ -2,7 +2,7 @@ import { useParams, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { MediaCard } from '../components/mediaCard';
-import { useAddComment, useMediaDetail, useUpdateDescription } from '../services/mediaHook';
+import { useAddComment, useMediaDetail, useUpdateDescription, useUpdateTags } from '../services/mediaHook';
 import { CommentCard } from '../components/commentCard';
 
 export default function SingleMedia() {
@@ -14,11 +14,31 @@ export default function SingleMedia() {
 
   const [newComment, setNewComment] = useState('');
   const [editedDescription, setEditedDescription] = useState<string | undefined>('');
+  const [tagsInput, setTagsInput] = useState<string>("")
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingTags, setIsEditingTags] = useState(false);
 
   const { data: mediaData, isLoading, error } = useMediaDetail(mediaId)
   const { mutate: updateDescription, isPending: descriptionMutationIsPending } = useUpdateDescription(mediaId);
+  const { mutate: updateTags, isPending: tagsMutationIsPending } = useUpdateTags(mediaId);
   const { mutate: addComment, isPending: addCommentIsPending } = useAddComment(mediaId);
+
+  const handleTagUpdate = () => {
+    if (mediaData) {
+      setIsEditingTags(true);
+      const newTags = tagsInput
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag && !mediaData?.tags.includes(tag)); // avoid duplicates
+
+      const updatedTags = [...mediaData?.tags, ...newTags];
+      updateTags({ mediaId, tags: updatedTags }, {
+        onSuccess: () => {
+          setIsEditingTags(false);
+        }
+      });
+    }
+  };
 
   const handleDescriptionSave = () => {
     if (mediaId && editedDescription !== undefined) {
@@ -69,6 +89,25 @@ export default function SingleMedia() {
       </button>
       <h1 className="single-media-title">{mediaData.title}</h1>
 
+      <div className="tags-section">
+        <h3>Tags</h3>
+        <div className="tags-input-wrapper">
+          <input
+            value={tagsInput}
+            onChange={(e) => setTagsInput(e.target.value)}
+            placeholder="Comma-separated tags"
+          />
+          <button onClick={handleTagUpdate} disabled={isEditingTags}>
+            {isEditingTags ? 'Updating...' : 'Update Tags'}
+          </button>
+        </div>
+        <div className="tags-display">
+          {mediaData.tags.map((tag) => (
+            <span key={tag} className="tag-chip">{tag}</span>
+          ))}
+        </div>
+      </div>
+
       <div className="single-media-media">
         <MediaCard media={mediaData} className={"single-media-display"} />
       </div>
@@ -108,7 +147,7 @@ export default function SingleMedia() {
       </div>
 
       <div className="comments-section">
-        <h2 className="section-title">Comments ({mediaData.comments.length})</h2>
+        <h2 className="section-title">Comments ({mediaData?.comments?.length})</h2>
         <form onSubmit={handleAddComment} className="comment-form">
           <Field.Root>
             <Field.Textarea
@@ -126,7 +165,7 @@ export default function SingleMedia() {
           </button>
         </form>
         <div className="comments-list">
-          {mediaData.comments.length > 0 ? (
+          {mediaData?.comments?.length > 0 ? (
             mediaData.comments.map((comment) => (
               <CommentCard key={comment.id} comment={comment} />
             ))

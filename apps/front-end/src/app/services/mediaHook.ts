@@ -1,6 +1,6 @@
 import { QueryKey, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { addComment, fetchMedia, fetchMediaDetail, updateMediaDescription } from "./mediaServices";
-import { AddCommentVariables, MediaDetail, UpdateDescriptionVariables, Comment, ApiResponse } from "./types";
+import { addComment, fetchMedia, fetchMediaDetail, updateMediaDescription, updateMediaTags } from "./mediaServices";
+import { AddCommentVariables, MediaDetail, UpdateDescriptionVariables, Comment, ApiResponse, UpdateTagsVariables } from "./types";
 
 export function useUpdateDescription(mediaId: string) {
 
@@ -62,9 +62,31 @@ export function useMediaDetail(mediaId: string) {
   });
 }
 
-export function useMediaList(page: number, limit: number) {
+export function useMediaList(page: number, limit: number, tag: string) {
     return useQuery<ApiResponse, Error, ApiResponse, QueryKey>({
-        queryKey: ['media', page, limit],
+        queryKey: ['media', page, limit, tag],
         queryFn: fetchMedia,
       });
+}
+
+export function useUpdateTags(mediaId: string) {
+
+  const queryClient = useQueryClient();
+  const mediaQueryKey = ['media', mediaId] as const;
+  
+  return useMutation<
+  MediaDetail,
+  Error,
+  UpdateTagsVariables
+>({
+  mutationFn: updateMediaTags,
+  onSuccess: (updatedMedia) => {
+    queryClient.setQueryData<MediaDetail>(mediaQueryKey, (oldData) => {
+      if (!oldData) return oldData;
+      return {
+        ...updatedMedia,
+      };
+    });
+  }
+});
 }

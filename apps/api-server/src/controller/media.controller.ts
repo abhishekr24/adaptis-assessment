@@ -11,9 +11,11 @@ export async function getAllMedia(req: AuthenticatedRequest, res: Response<Pagin
         const page = parseInt(req.query.page as string) || 1;
         const limit = parseInt(req.query.limit as string) || 25;
         const skip = (page - 1) * limit;
+        const tagFilter = req.query.tag as string | undefined;
+        const filter = tagFilter ? { tags: tagFilter } : {};
     
         const [media, total] = await Promise.all([
-          MediaModel.find()
+          MediaModel.find(filter)
             .skip(skip)
             .limit(limit)
             .lean()
@@ -26,6 +28,7 @@ export async function getAllMedia(req: AuthenticatedRequest, res: Response<Pagin
                 updatedAt: doc.updatedAt,
                 id: doc._id.toString(),
                 mediaType: doc.mediaType,
+                tags: doc.tags
               }))
             ),
           MediaModel.countDocuments()
@@ -45,7 +48,7 @@ export async function getAllMedia(req: AuthenticatedRequest, res: Response<Pagin
 }
 
 // GET single media with comments
-export async function getMediaDetail (req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> {
+export async function getMediaDetail(req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> {
     try {
     
         let media;
@@ -75,7 +78,8 @@ export async function getMediaDetail (req: AuthenticatedRequest, res: Response<M
           description: media.description,
           createdAt: media.createdAt,
           updatedAt: media.updatedAt,
-          mediaType: media.mediaType
+          mediaType: media.mediaType,
+          tags: media.tags
         };
     
         return res.json({ ...transformedMedia, comments });
@@ -128,7 +132,7 @@ export async function updateComment(req: AuthenticatedRequest, res: Response<Com
 }
 
 // PUT update media description
-export async function updateDescription (req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> {
+export async function updateDescription(req: AuthenticatedRequest, res: Response<MediaWithComments>): Promise<Response> {
     try {
         const { description } = req.body;
     
@@ -171,7 +175,8 @@ export async function updateDescription (req: AuthenticatedRequest, res: Respons
           description: savedMedia.description || '',
           createdAt: savedMedia.createdAt || new Date(),
           updatedAt: savedMedia.updatedAt || new Date(),
-          mediaType: savedMedia.mediaType || 'image'
+          mediaType: savedMedia.mediaType || 'image',
+          tags: savedMedia.tags
         };
     
         return res.json({ ...transformedMedia, comments });
@@ -180,3 +185,38 @@ export async function updateDescription (req: AuthenticatedRequest, res: Respons
         return res.status(500).json({ message: 'Error updating description' } as any);
       }
 }
+
+// PUT tags
+export async function updateTags(req: AuthenticatedRequest, res: Response): Promise<Response>  {
+  try {
+    const { tags } = req.body
+    const { mediaId } = req.params
+
+    if (!Array.isArray(tags)) {
+      return res.status(400).json({message: "Tags must be an array"})
+    }
+
+    const media = await MediaModel.findById(mediaId);
+    if (!media) return res.status(404).json({message: "Media not found"})
+
+    media.tags = tags
+    await media.save()
+
+    const transformedMedia: Media = {
+      id: media._id?.toString() || '',
+      url: media.url || '',
+      title: media.title || '',
+      description: media.description || '',
+      createdAt: media.createdAt || new Date(),
+      updatedAt: media.updatedAt || new Date(),
+      mediaType: media.mediaType || 'image',
+      tags: media.tags
+    };
+
+    return res.status(200).json({ ...transformedMedia })
+
+  } catch (error) {
+    console.error('Error adding tags:', error);
+    return res.status(500).json({ message: 'Error adding tags' } as any);
+  } 
+} 

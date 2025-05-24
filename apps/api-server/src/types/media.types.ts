@@ -7,6 +7,7 @@ export interface Media {
   description?: string;
   createdAt: Date;
   updatedAt: Date;
+  tags: string[];
   mediaType: 'image' | 'video';
 }
 

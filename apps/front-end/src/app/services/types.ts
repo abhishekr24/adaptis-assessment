@@ -29,6 +29,7 @@ export interface MediaDetail {
     description?: string;
     mediaType: string;
     comments: Comment[];
+    tags: string[]
 }
 
 export interface UpdateDescriptionVariables {
@@ -39,6 +40,11 @@ export interface UpdateDescriptionVariables {
 export interface AddCommentVariables {
     mediaId: string;
     text: string;
+}
+
+export interface UpdateTagsVariables {
+    mediaId: string;
+    tags: string[];
 }
 
 export const API_BASE_URL = 'http://localhost:8080';
