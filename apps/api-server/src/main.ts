@@ -13,6 +13,7 @@ dotenv.config();
 const host = process.env.HOST ?? 'localhost';
 const port = process.env.PORT ? Number(process.env.PORT) : 8080;
 const db = process.env.MONGO_URI || 'mongodb://localhost:27017/mediagallery';
+const pexelsAPIKey = process.env.PEXELS_API_KEY ?? ""
 console.log(`connecting to ${db}`);
 
 export const app = express();
@@ -27,7 +28,7 @@ MongoMemoryServer.create().then((mongoServer) => {
     .catch(err => console.error('MongoDB connection error:', err));
 });
 
-initializeDatabase();
+initializeDatabase(pexelsAPIKey);
 
 app.get('/', (_, res) => res.send({ message: 'Hello API. Use /media to get media.' }));
 app.use('/auth', authRoutes);
