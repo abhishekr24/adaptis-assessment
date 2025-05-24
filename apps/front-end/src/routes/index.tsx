@@ -1,8 +1,8 @@
 import { createRootRoute, createRoute, NotFoundRoute, Outlet, Router } from "@tanstack/react-router";
  import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import  LandingPage from '../app/LandingPage'
-import SingleMedia from '../app/components/SingleMedia'
-import MediaGrid from "../app/components/mediaGrid";
+import SingleMedia from '../app/feature/SingleMedia'
+import MediaGrid from "../app/feature/mediaGrid";
 
 const rootRoute = createRootRoute({
   component: () => (
