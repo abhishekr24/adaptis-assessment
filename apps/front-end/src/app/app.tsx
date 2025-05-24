@@ -2,6 +2,12 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { router } from "../routes";
 
+declare module '@tanstack/react-router' {
+  interface HistoryState {
+    fromPage?: number;
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

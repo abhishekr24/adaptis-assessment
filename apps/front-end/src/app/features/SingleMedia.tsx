@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from '@tanstack/react-router';
+import { useParams, useNavigate, useRouterState } from '@tanstack/react-router';
 import { useState, useEffect } from 'react';
 import { Field } from '@ark-ui/react/field';
 import { MediaCard } from '../components/mediaCard';
@@ -9,6 +9,8 @@ export default function SingleMedia() {
   const params = useParams({ from: '/media/$mediaId' }); 
   const mediaId = params.mediaId;
   const navigate = useNavigate();
+  const { location } = useRouterState();
+  const fromPage = location.state?.fromPage ?? 1;
 
   const [newComment, setNewComment] = useState('');
   const [editedDescription, setEditedDescription] = useState<string | undefined>('');
@@ -60,7 +62,7 @@ export default function SingleMedia() {
 
   return (
     <div className="single-media-container">
-      <button onClick={() => navigate({ to: '/media' })} className="back-to-gallery-button">
+      <button onClick={() => navigate({ to: '/media', search: { page: fromPage } })} className="back-to-gallery-button">
         &larr; Back to Gallery
       </button>
       <h1 className="single-media-title">{mediaData.title}</h1>

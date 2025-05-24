@@ -1,13 +1,16 @@
-import { Link, Outlet, useNavigate } from '@tanstack/react-router';
-import { useEffect, useState } from 'react';
+import { Link, Outlet, useNavigate, useSearch } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
 
 export default function MediaGrid() {
-  const [currentPage, setCurrentPage] = useState(1);
+  // const [currentPage, setCurrentPage] = useState(1);
   const mediaPerPage = 25; 
   const navigate = useNavigate();
+
+  const { page } = useSearch({ from: '/media' });
+  const currentPage = page ?? 1;
 
   const { data, isLoading, error, isFetching } = useMediaList(currentPage, mediaPerPage);
 
@@ -22,13 +25,19 @@ export default function MediaGrid() {
 
   const handleNextPage = () => {
     if (data && currentPage < data.totalPages) {
-      setCurrentPage(currentPage + 1);
+      navigate({
+        to: '/media',
+        search: (prev) => ({ ...prev, page: page + 1 }),
+      })
     }
   };
 
   const handlePreviousPage = () => {
     if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
+      navigate({
+        to: '/media',
+        search: (prev) => ({ ...prev, page: page - 1 }),
+      })
     }
   };
 
@@ -44,7 +53,8 @@ export default function MediaGrid() {
       {mediaList.map((media: Media) => (
       <Link 
         to="/media/$mediaId" 
-        params={{ mediaId: media.id }} 
+        params={{ mediaId: media.id }}
+        state={{ fromPage: currentPage }} 
         key={media.id} 
         className="media-cell"
       >

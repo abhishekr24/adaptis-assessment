@@ -1,8 +1,8 @@
 import { createRootRoute, createRoute, NotFoundRoute, Outlet, Router } from "@tanstack/react-router";
  import { TanStackRouterDevtools } from "@tanstack/router-devtools";
 import  LandingPage from '../app/LandingPage'
-import SingleMedia from '../app/feature/SingleMedia'
-import MediaGrid from "../app/feature/mediaGrid";
+import SingleMedia from '../app/features/SingleMedia'
+import MediaGrid from "../app/features/mediaGrid";
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -23,6 +23,10 @@ const mediaGridRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: "/media",
   component: MediaGrid,
+  validateSearch: (search) => {
+    const page = Number(search.page ?? 1)
+    return { page }
+  },
 });
 
 const singleMediaRoute = createRoute({
