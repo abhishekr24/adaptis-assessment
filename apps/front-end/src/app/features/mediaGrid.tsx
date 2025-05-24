@@ -1,13 +1,23 @@
-import { Link, Outlet, useNavigate, useSearch } from '@tanstack/react-router';
-import { useEffect } from 'react';
+import { Link, Outlet, useNavigate, useRouterState, useSearch } from '@tanstack/react-router';
+import { useEffect, useRef } from 'react';
 import { Media } from '../services/types';
 import { MediaCard } from '../components/mediaCard';
 import { useMediaList } from '../services/mediaHook';
 
 export default function MediaGrid() {
   // const [currentPage, setCurrentPage] = useState(1);
-  const mediaPerPage = 25; 
+  const mediaPerPage = 25;
   const navigate = useNavigate();
+  const { location } = useRouterState();
+  const fromMediaId = location.state?.fromMediaId;
+  const mediaRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  useEffect(() => {
+    if (fromMediaId && mediaRefs.current[fromMediaId]) {
+      mediaRefs.current[fromMediaId]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [fromMediaId]);
+
 
   const { page } = useSearch({ from: '/media' });
   const currentPage = page ?? 1;
@@ -16,11 +26,11 @@ export default function MediaGrid() {
 
   useEffect(() => {
     if (error?.message.includes('Authentication failed')) {
-      navigate({ to: '/' }); 
+      navigate({ to: '/' });
     }
   }, [error, navigate]);
 
-  if (isLoading && !data) return <div className="media-grid-loading">Loading media...</div>; 
+  if (isLoading && !data) return <div className="media-grid-loading">Loading media...</div>;
   if (error) return <div className="media-grid-error">Error fetching media: {error.message}</div>;
 
   const handleNextPage = () => {
@@ -50,20 +60,25 @@ export default function MediaGrid() {
       <h1 className="media-grid-title">Media Gallery</h1>
 
       <div className="media-grid">
-      {mediaList.map((media: Media) => (
-      <Link 
-        to="/media/$mediaId" 
-        params={{ mediaId: media.id }}
-        state={{ fromPage: currentPage }} 
-        key={media.id} 
-        className="media-cell"
-      >
-        <div className="media-thumbnail-container">
-          <MediaCard media={media} className={"media-thumbnail"} />
-        </div>
-        <p className="media-cell-title">{media.title}</p>
-      </Link>
-      ))}
+        {mediaList.map((media: Media) => (
+          <Link
+            to="/media/$mediaId"
+            params={{ mediaId: media.id }}
+            state={{ fromPage: currentPage }}
+            key={media.id}
+            className="media-cell"
+          >
+            <div
+              className="media-thumbnail-container"
+              ref={(el) => {
+                mediaRefs.current[media.id] = el;
+              }}
+            >
+              <MediaCard media={media} className={"media-thumbnail"} />
+            </div>
+            <p className="media-cell-title">{media.title}</p>
+          </Link>
+        ))}
       </div>
 
       {mediaList.length === 0 && !isFetching && (

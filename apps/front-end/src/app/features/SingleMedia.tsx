@@ -6,7 +6,7 @@ import { useAddComment, useMediaDetail, useUpdateDescription } from '../services
 import { CommentCard } from '../components/commentCard';
 
 export default function SingleMedia() {
-  const params = useParams({ from: '/media/$mediaId' }); 
+  const params = useParams({ from: '/media/$mediaId' });
   const mediaId = params.mediaId;
   const navigate = useNavigate();
   const { location } = useRouterState();
@@ -49,10 +49,10 @@ export default function SingleMedia() {
 
   useEffect(() => {
     if (error) {
-        console.error("Error fetching media:", error.message);
-        if (error.message.toLowerCase().includes('auth')) {
-            navigate({ to: '/' });
-        }
+      console.error("Error fetching media:", error.message);
+      if (error.message.toLowerCase().includes('auth')) {
+        navigate({ to: '/' });
+      }
     }
   }, [error, navigate]);
 
@@ -62,11 +62,13 @@ export default function SingleMedia() {
 
   return (
     <div className="single-media-container">
-      <button onClick={() => navigate({ to: '/media', search: { page: fromPage } })} className="back-to-gallery-button">
+      <button
+        onClick={() => navigate({ to: '/media', search: { page: fromPage }, state: { fromMediaId: mediaId }, })}
+        className="back-to-gallery-button">
         &larr; Back to Gallery
       </button>
       <h1 className="single-media-title">{mediaData.title}</h1>
-      
+
       <div className="single-media-media">
         <MediaCard media={mediaData} className={"single-media-display"} />
       </div>

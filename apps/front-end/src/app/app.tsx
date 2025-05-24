@@ -5,6 +5,7 @@ import { router } from "../routes";
 declare module '@tanstack/react-router' {
   interface HistoryState {
     fromPage?: number;
+    fromMediaId? : string;
   }
 }
 
